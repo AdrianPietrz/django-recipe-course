@@ -14,7 +14,7 @@ services:
                  python manage.py runserver 0.0.0.0:8000"
         environment:
           - DB_HOST=db
-          - DB_NAME=stockDB
+          - DB_NAME=recipeDB
           - DB_USER=postgres
           - DB_PASS=admin
         depends_on:
@@ -25,7 +25,7 @@ services:
       volumes:
         - dev-db-data:/var/lib/postgresql/data
       environment:
-        - POSTGRES_DB=stockDB
+        - POSTGRES_DB=recipeDB
         - POSTGRES_USER=postgres
         - POSTGRES_PASSWORD=admin
 
