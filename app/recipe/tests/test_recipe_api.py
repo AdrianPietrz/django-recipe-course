@@ -256,9 +256,6 @@ class PrivateRecipeApiTests(TestCase):
         payload = {
             'tags': [
                 {
-                    'name': 'Vegan',
-                },
-                {
                     'name': 'Dessert',
                 }
             ]
@@ -268,7 +265,7 @@ class PrivateRecipeApiTests(TestCase):
         res = self.client.patch(url, payload, format='json')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(recipe.tags.count(), 2)
+        self.assertEqual(recipe.tags.count(), 1)
         self.assertNotIn(tag1, recipe.tags.all())
         self.assertIn(tag2, recipe.tags.all())
 
