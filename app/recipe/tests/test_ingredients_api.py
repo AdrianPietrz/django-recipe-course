@@ -15,6 +15,11 @@ def create_user(email='example@email.com', password='Test123*'):
     return get_user_model().objects.create_user(email=email, password=password)
 
 
+def detail_url(ingredient_id):
+    """Return ingredient detail URL"""
+    return reverse('recipe:ingredient-detail', args=[ingredient_id])
+
+
 class PublicIngredientsApiTests(TestCase):
     """Test the publicly available ingredients API"""
 
@@ -59,3 +64,28 @@ class PrivateIngredientsApiTests(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]['name'], ingredient.name)
         self.assertEqual(res.data[0]['id'], ingredient.id)
+
+    def test_update_ingredient(self):
+        """Test updating an ingredient"""
+        ingredient = Ingredient.objects.create(user=self.user, name='Cabbage')
+        payload = {'name': 'Coriander'}
+        url = detail_url(ingredient.id)
+
+        res = self.client.patch(url, payload)
+        ingredient.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(ingredient.name, payload['name'])
+
+    def test_update_user_error(self):
+        """Test that updating an ingredient with another user returns an error"""
+        user2 = create_user(email='other@email.com', password='Test123*')
+        ingredient = Ingredient.objects.create(user=user2, name='Vinegar')
+        payload = {'user_id': self.user.id}
+        url = detail_url(ingredient.id)
+
+        res = self.client.patch(url, payload)
+        ingredient.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotEquals(ingredient.user, self.user)
