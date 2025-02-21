@@ -1,7 +1,4 @@
-
-
-
-from core.models import Recipe, Tag
+from core.models import Recipe, Tag, Ingredient
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -11,9 +8,11 @@ from rest_framework.test import APIClient
 
 RECIPES_URL = reverse('recipe:recipe-list')
 
+
 def detail_url(recipe_id):
     """Return recipe detail URL"""
     return reverse('recipe:recipe-detail', args=[recipe_id])
+
 
 def create_recipe(user, **params):
     """Helper function to create new recipe"""''
@@ -29,8 +28,10 @@ def create_recipe(user, **params):
     recipe = Recipe.objects.create(user=user, **defaults)
     return recipe
 
+
 def create_user(**params):
     return get_user_model().objects.create_user(**params)
+
 
 class PublicRecipeApiTests(TestCase):
     """Test unauthenticated recipe API access"""
@@ -50,7 +51,7 @@ class PrivateRecipeApiTests(TestCase):
 
     def setUp(self):
         self.client: APIClient = APIClient()
-        self.user = create_user( email='test@email.com', password='Test123*')
+        self.user = create_user(email='test@email.com', password='Test123*')
         self.client.force_authenticate(self.user)
 
     def test_retrieve_recipes(self):
@@ -124,7 +125,8 @@ class PrivateRecipeApiTests(TestCase):
 
     def test_full_update_recipe(self):
         """Test updating a recipe with put"""
-        recipe = create_recipe(user=self.user, title='Old title', link='https://www.google.com', time_minutes=10, price=5.00, description='Sample description')
+        recipe = create_recipe(user=self.user, title='Old title', link='https://www.google.com', time_minutes=10,
+                               price=5.00, description='Sample description')
         payload = {
             'title': 'New title',
             'time_minutes': 20,
@@ -287,3 +289,59 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.tags.count(), 0)
         self.assertNotIn(tag1, recipe.tags.all())
         self.assertNotIn(tag2, recipe.tags.all())
+
+    def test_create_recipe_with_new_ingredients(self):
+        """Test creating a recipe with ingredients"""
+        payload = {
+            'title': 'Test recipe with two ingredients',
+            'price': 5.00,
+            'link': 'https://www.google.com',
+            'time_minutes': 30,
+            'ingredients': [
+                {
+                    'name': 'Cucumber',
+                },
+                {
+                    'name': 'Salt',
+                }
+            ]
+        }
+
+        res = self.client.post(RECIPES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recipes = Recipe.objects.filter(user=self.user)
+        recipe = recipes[0]
+        self.assertEqual(recipe.ingredients.count(), 2)
+
+        for ingredient in payload['ingredients']:
+            self.assertTrue(recipe.ingredients.filter(name=ingredient['name'], user=self.user).exists())
+
+    def test_create_recipe_with_existing_ingredients(self):
+        """Test creating a recipe with existing ingredients"""
+        ingredient = Ingredient.objects.create(user=self.user, name='Cucumber')
+        payload = {
+            'title': 'Test recipe with two ingredients',
+            'price': 5.00,
+            'link': 'https://www.google.com',
+            'time_minutes': 30,
+            'ingredients': [
+                {
+                    'name': 'Cucumber',
+                },
+                {
+                    'name': 'Salt',
+                }
+            ]
+        }
+
+        res = self.client.post(RECIPES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recipes = Recipe.objects.filter(user=self.user)
+        recipe = recipes[0]
+        self.assertEqual(recipe.ingredients.count(), 2)
+        self.assertIn(ingredient, recipe.ingredients.all())
+
+        for ingredient in payload['ingredients']:
+            self.assertTrue(recipe.ingredients.filter(name=ingredient['name'], user=self.user).exists())
