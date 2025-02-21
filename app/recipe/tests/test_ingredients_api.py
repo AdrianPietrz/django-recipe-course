@@ -88,3 +88,24 @@ class PrivateIngredientsApiTests(TestCase):
         ingredient.refresh_from_db()
 
         self.assertNotEquals(ingredient.user, self.user)
+
+    def test_delete_ingredient(self):
+        """Test deleting an ingredient"""
+        ingredient = Ingredient.objects.create(user=self.user, name='Cabbage')
+        url = detail_url(ingredient.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Ingredient.objects.filter(id=ingredient.id).exists())
+
+    def test_user_delete_other_user_ingredient_returns_error(self):
+        """Test that deleting an ingredient with another user returns an error"""
+        user2 = create_user(email='other@email.com', password='Test123*')
+        ingredient = Ingredient.objects.create(user=user2, name='Vinegar')
+        url = detail_url(ingredient.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Ingredient.objects.filter(id=ingredient.id).exists())
