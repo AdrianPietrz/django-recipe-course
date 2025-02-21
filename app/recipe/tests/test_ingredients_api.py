@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.models import Ingredient
-from recipe.serializers import IngredientsSerializer
+from recipe.serializers import IngredientSerializer
 from django.urls import reverse
 
 INGREDIENTS_URL = reverse('recipe:ingredient-list')
@@ -45,7 +45,7 @@ class PrivateIngredientsApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
-        self.assertEqual(res.data, IngredientsSerializer(Ingredient.objects.all().order_by('-name'), many=True).data)
+        self.assertEqual(res.data, IngredientSerializer(Ingredient.objects.all().order_by('-name'), many=True).data)
 
     def test_ingredients_limited_to_user(self):
         """Test that ingredients returned are for the authenticated user"""
