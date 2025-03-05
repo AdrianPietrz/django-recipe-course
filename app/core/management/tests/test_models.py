@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from decimal import Decimal
@@ -7,6 +9,7 @@ from core import models
 def create_user(email='test@email.com', password='test123*'):
     """Helper function to create new user"""
     return get_user_model().objects.create_user(email, password)
+
 
 class ModelTests(TestCase):
 
@@ -30,13 +33,10 @@ class ModelTests(TestCase):
         self.assertEqual(user.email, "test@email.com")
 
     def test_new_user_without_email_raises_error(self):
-
-
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user('', 'test123')
 
     def test_create_superuser(self):
-
         user = get_user_model().objects.create_superuser(
             email='test@email.com',
             password='Qwerty123*'
@@ -77,3 +77,12 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(ingredient), ingredient.name)
+
+    @patch('core.models.uuid.uuid4')
+    def test_recipe_file_name_uuid(self, mock_uuid):
+        """Test generating image path."""
+        uuid = 'test-uuid'
+        mock_uuid.return_value = uuid
+        file_path = models.recipe_image_file_path(None, 'image.jpg')
+
+        self.assertEqual(f'uploads/recipe/{uuid}.jpg', file_path)
