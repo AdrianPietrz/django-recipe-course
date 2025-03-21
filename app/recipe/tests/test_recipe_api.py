@@ -416,6 +416,54 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.ingredients.count(), 0)
         self.assertNotIn(ingredient, recipe.ingredients.all())
 
+    def test_filter_by_tags(self):
+        """Filter recipes by tags"""
+        recipe1 = create_recipe(user=self.user, title='Vegetable curry')
+        recipe2 = create_recipe(user=self.user, title='Fish and fries')
+        tag1 = Tag.objects.create(user=self.user, name='Vegetarian')
+        tag2 = Tag.objects.create(user=self.user, name='Meat')
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+        recipe3 = create_recipe(user=self.user, title='Spaghetti')
+
+        params = {
+            'tags': f'{tag1.id},{tag2.id}',
+        }
+
+        res = self.client.get(RECIPES_URL, params)
+
+        serialized_recipe1 = RecipeSerializer(recipe1)
+        serialized_recipe2 = RecipeSerializer(recipe2)
+        serialized_recipe3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serialized_recipe1.data, res.data)
+        self.assertIn(serialized_recipe2.data, res.data)
+        self.assertNotIn(serialized_recipe3.data, res.data)
+
+    def test_filter_by_ingredients(self):
+        """Filter recipes by ingredients"""
+        recipe1 = create_recipe(user=self.user, title='Vegetable curry')
+        recipe2 = create_recipe(user=self.user, title='Fish and fries')
+        ingredient1 = Ingredient.objects.create(user=self.user, name='Cucumber')
+        ingredient2 = Ingredient.objects.create(user=self.user, name='Fish')
+        recipe1.ingredients.add(ingredient1)
+        recipe2.ingredients.add(ingredient2)
+        recipe3 = create_recipe(user=self.user, title='Spaghetti')
+
+        params = {
+            'ingredients': f'{ingredient1.id},{ingredient2.id}',
+        }
+
+        res = self.client.get(RECIPES_URL, params)
+
+        serialized_recipe1 = RecipeSerializer(recipe1)
+        serialized_recipe2 = RecipeSerializer(recipe2)
+        serialized_recipe3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serialized_recipe1.data, res.data)
+        self.assertIn(serialized_recipe2.data, res.data)
+        self.assertNotIn(serialized_recipe3.data, res.data)
+
 
 class ImageUploadTests(TestCase):
     """Tests for the image upload API"""
@@ -456,4 +504,3 @@ class ImageUploadTests(TestCase):
         res = self.client.post(url, payload, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-
